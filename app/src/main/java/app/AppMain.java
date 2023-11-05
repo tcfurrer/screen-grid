@@ -2,9 +2,13 @@ package app;
 
 import javafx.application.*;
 import javafx.beans.property.DoubleProperty;
+import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleDoubleProperty;
+import javafx.beans.property.SimpleObjectProperty;
+import javafx.geometry.Point2D;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.image.Image;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.input.ScrollEvent;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.Background;
@@ -18,6 +22,7 @@ import static javafx.scene.paint.Color.*;
 public final class AppMain extends Application {
     private static final double STARTING_GRID_SIZE = 50;
     private static final double STARTING_LINE_WIDTH = 5;
+    private static final Point2D STARTING_ORIGIN = Point2D.ZERO;
 
     public static void main(String[] args) {
         launch(args);
@@ -26,6 +31,8 @@ public final class AppMain extends Application {
     private Pane root;
     private Canvas canvas;
     private DoubleProperty gridSize, lineWidth;
+    private ObjectProperty<Point2D> origin;
+    private Point2D dragStartPoint, dragStartOrigin;
 
     @Override
     public void start(Stage primaryStage) {
@@ -34,6 +41,11 @@ public final class AppMain extends Application {
 
         gridSize = new SimpleDoubleProperty(STARTING_GRID_SIZE);
         lineWidth = new SimpleDoubleProperty(STARTING_LINE_WIDTH);
+        origin = new SimpleObjectProperty<>(STARTING_ORIGIN);
+
+        gridSize.subscribe(this::draw);
+        lineWidth.subscribe(this::draw);
+        origin.subscribe(this::draw);
 
         root = new StackPane();
         canvas = new Canvas();
@@ -42,8 +54,6 @@ public final class AppMain extends Application {
         root.heightProperty().subscribe(this::resize);
         canvas.widthProperty().subscribe(this::draw);
         canvas.heightProperty().subscribe(this::draw);
-        gridSize.subscribe(this::draw);
-        lineWidth.subscribe(this::draw);
 
         var scene = new Scene(root, 600, 400, TRANSPARENT);
         primaryStage.setScene(scene);
@@ -53,33 +63,9 @@ public final class AppMain extends Application {
         primaryStage.requestFocus();
 
         root.setOnScroll(this::scroll);
-        root.setOnMouseClicked(e -> Platform.exit());
-    }
-
-    private void scroll(ScrollEvent e)
-    {
-        if (!e.isShiftDown() && !e.isControlDown() && !e.isAltDown())
-        {
-            var size = gridSize.get();
-            if (e.getDeltaY() > 0) {
-                size += 1;
-            } else if (e.getDeltaY() < 0) {
-                size -= 1;
-            }
-            if (size < 1) size = 1;
-            gridSize.set(size);
-        }
-        else if (!e.isShiftDown() && e.isControlDown() && !e.isAltDown())
-        {
-            var size = lineWidth.get();
-            if (e.getDeltaY() > 0) {
-                size += 1;
-            } else if (e.getDeltaY() < 0) {
-                size -= 1;
-            }
-            if (size < 1) size = 1;
-            lineWidth.set(size);
-        }
+        root.setOnMousePressed(this::mousePress);
+        root.setOnMouseDragged(this::mouseDrag);
+        root.setOnMouseReleased(this::mouseRelease);
     }
 
     private void resize()
@@ -102,15 +88,67 @@ public final class AppMain extends Application {
 
         // Horizontal lines
         var size = gridSize.get();
-        for (var y=0.0; y<height; y+=size)
+        var yStart = origin.get().getY() % size;
+        for (var y=yStart; y<height; y+=size)
         {
             gc.strokeLine(0,y,width,y);
         }
 
         // Vertical lines
-        for (var x=0.0; x<width; x+=size)
+        var xStart = origin.get().getX() % size;
+        for (var x=xStart; x<width; x+=size)
         {
             gc.strokeLine(x,0,x,height);
+        }
+    }
+
+    private void scroll(ScrollEvent e)
+    {
+        if (!e.isShiftDown() && !e.isControlDown() && !e.isAltDown())
+        {
+            var size = gridSize.get();
+            if (e.getDeltaY() > 0) {
+                size += 1;
+            } else if (e.getDeltaY() < 0) {
+                size -= 1;
+            }
+            size = Math.clamp(size, Math.max(lineWidth.get()*2.0, 4), 500);
+            gridSize.set(size);
+        }
+        else if (!e.isShiftDown() && e.isControlDown() && !e.isAltDown())
+        {
+            var size = lineWidth.get();
+            if (e.getDeltaY() > 0) {
+                size += 1;
+            } else if (e.getDeltaY() < 0) {
+                size -= 1;
+            }
+            size = Math.clamp(size, 1, gridSize.get()/2.0);
+            lineWidth.set(size);
+        }
+    }
+
+    private void mousePress(MouseEvent e)
+    {
+        dragStartPoint = new Point2D(e.getScreenX(), e.getScreenY());
+        dragStartOrigin = origin.get();
+    }
+
+    private void mouseRelease(MouseEvent e)
+    {
+        dragStartPoint = null;
+        dragStartOrigin = null;
+        if (e.isStillSincePress()) Platform.exit();
+    }
+
+    private void mouseDrag(MouseEvent e)
+    {
+        if (e.isStillSincePress()) return;
+        if (!e.isShiftDown() && !e.isControlDown() && !e.isAltDown())
+        {
+            var dragPoint = new Point2D(e.getScreenX(), e.getScreenY());
+            var delta = dragPoint.subtract(dragStartPoint);
+            origin.set(dragStartOrigin.add(delta));
         }
     }
 }
