@@ -16,6 +16,7 @@ import javafx.scene.paint.Color;
 import javafx.stage.*;
 import javafx.scene.*;
 import static javafx.scene.paint.Color.*;
+import java.util.prefs.Preferences;
 
 public final class AppMain extends Application {
     private static final double STARTING_GRID_SIZE = 50;
@@ -26,6 +27,8 @@ public final class AppMain extends Application {
     public static void main(String[] args) {
         launch(args);
     }
+
+    private final Preferences prefs = Preferences.userNodeForPackage(AppMain.class);
 
     private Pane root;
     private Canvas canvas;
@@ -38,10 +41,20 @@ public final class AppMain extends Application {
         primaryStage.initStyle(StageStyle.TRANSPARENT);
         primaryStage.getIcons().add(new Image(getClass().getResource("screen-grid.png").toExternalForm()));
 
-        gridSize = new SimpleDoubleProperty(STARTING_GRID_SIZE);
-        lineWidth = new SimpleDoubleProperty(STARTING_LINE_WIDTH);
-        origin = new SimpleObjectProperty<>(STARTING_ORIGIN);
-        brightness = new SimpleDoubleProperty(STARTING_BRIGHTNESS);
+        gridSize = new SimpleDoubleProperty(prefs.getDouble("screen-grid-size", STARTING_GRID_SIZE));
+        lineWidth = new SimpleDoubleProperty(prefs.getDouble("screen-grid-line-width", STARTING_LINE_WIDTH));
+        var x = prefs.getDouble("screen-grid-origin-x", STARTING_ORIGIN.getX());
+        var y = prefs.getDouble("screen-grid-origin-y", STARTING_ORIGIN.getY());
+        origin = new SimpleObjectProperty<>(new Point2D(x,y));
+        brightness = new SimpleDoubleProperty(prefs.getDouble("screen-grid-brightness", STARTING_BRIGHTNESS));
+
+        gridSize.subscribe(s -> prefs.putDouble("screen-grid-size", s.doubleValue()));
+        lineWidth.subscribe(s -> prefs.putDouble("screen-grid-line-width", s.doubleValue()));
+        origin.subscribe(s -> {
+            prefs.putDouble("screen-grid-origin-x", s.getX());
+            prefs.putDouble("screen-grid-origin-y", s.getY());
+        });
+        brightness.subscribe(s -> prefs.putDouble("screen-grid-brightness", s.doubleValue()));
 
         gridSize.subscribe(this::draw);
         lineWidth.subscribe(this::draw);

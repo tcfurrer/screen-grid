@@ -1,4 +1,5 @@
 module app {
+    requires java.prefs;
     // JavaFX
     requires javafx.base;
     requires javafx.graphics;
