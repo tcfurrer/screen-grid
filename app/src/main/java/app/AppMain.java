@@ -10,8 +10,6 @@ import javafx.scene.canvas.Canvas;
 import javafx.scene.image.Image;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.input.ScrollEvent;
-import javafx.scene.layout.AnchorPane;
-import javafx.scene.layout.Background;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
@@ -23,6 +21,7 @@ public final class AppMain extends Application {
     private static final double STARTING_GRID_SIZE = 50;
     private static final double STARTING_LINE_WIDTH = 5;
     private static final Point2D STARTING_ORIGIN = Point2D.ZERO;
+    private static final double STARTING_BRIGHTNESS = 0;
 
     public static void main(String[] args) {
         launch(args);
@@ -30,7 +29,7 @@ public final class AppMain extends Application {
 
     private Pane root;
     private Canvas canvas;
-    private DoubleProperty gridSize, lineWidth;
+    private DoubleProperty gridSize, lineWidth, brightness;
     private ObjectProperty<Point2D> origin;
     private Point2D dragStartPoint, dragStartOrigin;
 
@@ -42,10 +41,12 @@ public final class AppMain extends Application {
         gridSize = new SimpleDoubleProperty(STARTING_GRID_SIZE);
         lineWidth = new SimpleDoubleProperty(STARTING_LINE_WIDTH);
         origin = new SimpleObjectProperty<>(STARTING_ORIGIN);
+        brightness = new SimpleDoubleProperty(STARTING_BRIGHTNESS);
 
         gridSize.subscribe(this::draw);
         lineWidth.subscribe(this::draw);
         origin.subscribe(this::draw);
+        brightness.subscribe(this::draw);
 
         root = new StackPane();
         canvas = new Canvas();
@@ -83,7 +84,7 @@ public final class AppMain extends Application {
         gc.clearRect(0,0,width,height);
         gc.setFill(Color.rgb(0,0,0,1.0/255));
         gc.fillRect(0,0,width,height);
-        gc.setStroke(BLACK);
+        gc.setStroke(Color.gray(brightness.get()));
         gc.setLineWidth(lineWidth.get());
 
         // Horizontal lines
@@ -106,25 +107,36 @@ public final class AppMain extends Application {
     {
         if (!e.isShiftDown() && !e.isControlDown() && !e.isAltDown())
         {
-            var size = gridSize.get();
+            var i = gridSize.get();
             if (e.getDeltaY() > 0) {
-                size += 1;
+                i += 1;
             } else if (e.getDeltaY() < 0) {
-                size -= 1;
+                i -= 1;
             }
-            size = Math.clamp(size, Math.max(lineWidth.get()*2.0, 4), 500);
-            gridSize.set(size);
+            i = Math.clamp(i, Math.max(lineWidth.get()*2.0, 4), 500);
+            gridSize.set(i);
         }
         else if (!e.isShiftDown() && e.isControlDown() && !e.isAltDown())
         {
-            var size = lineWidth.get();
+            var i = lineWidth.get();
             if (e.getDeltaY() > 0) {
-                size += 1;
+                i += 1;
             } else if (e.getDeltaY() < 0) {
-                size -= 1;
+                i -= 1;
             }
-            size = Math.clamp(size, 1, gridSize.get()/2.0);
-            lineWidth.set(size);
+            i = Math.clamp(i, 0.25, gridSize.get()/2.0);
+            lineWidth.set(i);
+        }
+        else if (!e.isShiftDown() && !e.isControlDown() && e.isAltDown())
+        {
+            var i = brightness.get();
+            if (e.getDeltaY() > 0) {
+                i += 1.0/20;
+            } else if (e.getDeltaY() < 0) {
+                i -= 1.0/20;
+            }
+            i = Math.clamp(i, 0.0, 1.0);
+            brightness.set(i);
         }
     }
 
