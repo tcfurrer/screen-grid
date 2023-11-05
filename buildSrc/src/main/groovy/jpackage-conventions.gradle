@@ -102,7 +102,7 @@ tasks.register('jpackage', Exec) {
             '--vendor', 'Travis Furrer',
             '--copyright', 'TBD',
             //'--license-file', 'TBD',
-            '--icon', 'screen-grid.ico',
+            '--icon', 'src/main/resources/app/screen-grid.ico',
             '--type', 'msi', // value of 'app-image' here can be used for debugging purposes
             '--app-version', '1.0', //TBD: need to require cmdline property for this (instead of hardcoding value)
             '--win-per-user-install', //TBD: omit on linux
