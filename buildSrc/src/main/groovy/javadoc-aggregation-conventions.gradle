@@ -6,7 +6,7 @@ tasks.register('cleanAllJavadoc', Delete) {
 clean.dependsOn cleanAllJavadoc
 tasks.register('allJavadoc', Javadoc) {
     description = 'Generates a global javadoc from all the modules'
-    title = 'Template JavaFX Project Documentation'
+    title = 'Screen Grid Project Documentation'
     failOnError = true
     // TODO: distribute this, instead of hardcoding list here
     def projectsToDocument = [

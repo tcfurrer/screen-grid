@@ -3,6 +3,7 @@ package app;
 import java.io.*;
 import javafx.application.*;
 import javafx.fxml.*;
+import javafx.scene.image.Image;
 import javafx.stage.*;
 import javafx.scene.*;
 
@@ -13,7 +14,8 @@ public final class AppMain extends Application {
 
     @Override
     public void start(Stage primaryStage) throws IOException {
-        primaryStage.setTitle("Template JavaFX Project");
+        primaryStage.setTitle("Screen Grid");
+        primaryStage.getIcons().add(new Image(getClass().getResource("screen-grid.png").toExternalForm()));
 
         Parent root = FXMLLoader.load(getClass().getResource("AppMain.fxml"));
         var scene = new Scene(root, 600, 400);
